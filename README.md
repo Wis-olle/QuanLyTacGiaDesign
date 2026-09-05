@@ -4,12 +4,21 @@ Cùng giao diện và chức năng với `../QuanLyTacGia` (bản dựng bằng 
 
 Chỉ phần UI/UX, dữ liệu mẫu in-memory (48 tác giả). Phong cách, tài liệu thiết kế và review dùng chung: `../PHONG_CACH_THIET_KE.md`, `../KIEN_TRUC_MAN_HINH.md`, `../MAU_THIET_KE.md`.
 
-## Chạy
-Mở `QuanLyTacGiaDesign.csproj` bằng Visual Studio 2022 17.14+ / VS 2026 (hỗ trợ .NET 10) rồi F5, hoặc:
+## Tải về và chạy
+Mã nguồn: https://github.com/Wis-olle/QuanLyTacGiaDesign
+
+```bash
+git clone https://github.com/Wis-olle/QuanLyTacGiaDesign.git
+cd QuanLyTacGiaDesign
+```
+
+Mở `QuanLyTacGiaDesign.slnx` (hoặc `QuanLyTacGiaDesign.csproj`) bằng Visual Studio 2022 17.14+ / VS 2026 (hỗ trợ .NET 10) rồi F5, hoặc chạy bằng dòng lệnh:
 
 ```bash
 dotnet run --project QuanLyTacGiaDesign.csproj
 ```
+
+Yêu cầu: .NET 10 SDK; gói AntdUI 2.4.8 tự tải từ NuGet khi build lần đầu.
 
 ## Mở màn hình trong Designer (kéo thả)
 1. **Build** dự án một lần (Designer của .NET chạy ngoài tiến trình, cần assembly đã build để nạp control AntdUI và control tự viết vào Toolbox).

@@ -273,7 +273,6 @@ namespace QuanLyTacGia.Pages
             // txtSearch
             //
             txtSearch.AllowClear = true;
-            txtSearch.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             txtSearch.BackColor = System.Drawing.Color.White;
             txtSearch.BorderColor = System.Drawing.Color.FromArgb(227, 231, 238);
             txtSearch.Font = new System.Drawing.Font("Segoe UI", 9.75F);
@@ -289,7 +288,6 @@ namespace QuanLyTacGia.Pages
             //
             // segView — toggle Bảng ↔ Thẻ (Full để 2 ô icon chia đều 96 px)
             //
-            segView.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             segView.Full = true;
             segView.IconRatio = 0.75F;
             segView.Location = new System.Drawing.Point(808, 73);

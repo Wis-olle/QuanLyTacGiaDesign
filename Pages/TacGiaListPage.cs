@@ -68,6 +68,8 @@ namespace QuanLyTacGia.Pages
             segView.SelectIndexChanged += (_, _) => SwitchView();
             chipMonth.Click += (_, _) => { monthOnly = false; ApplyFilter(); };
 
+            // ô tìm kiếm + toggle neo mép phải đặt theo Resize (không dùng Anchor Right: WinForms tính sai khoảng neo khi DPI ≠ 100 %)
+            header.Resize += (_, _) => { txtSearch.Left = header.Width - S(24 + 260); segView.Left = txtSearch.Left - S(12 + 96); };
             txtSearch.TextChanged += (_, _) => { debounce.Stop(); debounce.Start(); };
             debounce.Tick += (_, _) => { debounce.Stop(); ApplyFilter(); };
 

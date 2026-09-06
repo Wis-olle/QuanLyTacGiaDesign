@@ -32,6 +32,9 @@ namespace QuanLyTacGia.Pages
 
             btnAdd.Click += (_, _) => onAdd();
             btnAll.Click += (_, _) => view(ListPreset.All);
+            // nút neo phải đặt theo Resize (không dùng Anchor Right: WinForms tính sai khoảng neo khi DPI ≠ 100 %)
+            welcome.Resize += (_, _) => btnAdd.Location = new Point(welcome.Width - S(24) - btnAdd.Width, S(34));
+            recentCard.Resize += (_, _) => btnAll.Location = new Point(recentCard.Width - S(20) - btnAll.Width, S(17));
             SetupCards();
             SetupRecent();
             Resize += (_, _) => Relayout();

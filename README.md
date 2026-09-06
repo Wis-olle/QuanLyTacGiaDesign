@@ -56,7 +56,9 @@ Không dùng hàm tự viết (`S()`, `AppTheme.*`) trong `*.Designer.cs`: Desig
 
 `AppTheme.K` (= DPI/96, đặt trong `MainForm` lúc mở và khi đổi DPI) chỉ dùng cho **phần vẽ tay** (biểu đồ, thẻ tác giả, hoạ tiết, HeaderView) và tính toán lúc chạy (`Relayout`, ngưỡng ẩn cột). Control tự viết đặt kích thước trong constructor bằng px 96 thuần (WinForms nhân sau), không dùng `S()`.
 
-Đã kiểm chứng bằng harness ở 96 DPI: 22 ảnh trùng bản gốc (khác < 0,1 % điểm ảnh, chỉ ở trạng thái hover). Chưa kiểm chứng trên màn 125 / 150 % thật — nếu lệch, xem lại `AutoScaleMode` của trang bị lệch.
+Đã kiểm chứng bằng harness ở 96 DPI: 26 ảnh trùng bản gốc (khác < 0,5 % điểm ảnh, chỉ ở trạng thái hover / thời điểm animation).
+
+**Không dùng `Anchor` Bottom / Right cho control cần bám mép** (khối avatar + Đăng xuất ở đáy sidebar, nút "Thêm tác giả", "Xem tất cả", ô tìm kiếm, toggle bảng/thẻ): WinForms tính sai khoảng neo khi DPI ≠ 100 % (người dùng gặp trên màn 8.8 inch: avatar trôi lên sát "Cài đặt"). Các control này để `Anchor` mặc định trong Designer và được đặt vị trí trong code-behind theo kích thước thật (`OnResize` / `Resize`, offset × `AppTheme.K`). Muốn thêm control bám mép: làm cùng cách.
 
 ## Chụp ảnh kiểm tra giao diện
 ```bash

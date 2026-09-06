@@ -101,7 +101,6 @@ namespace QuanLyTacGia.Ui
             //
             // line
             //
-            line.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             line.BackColor = System.Drawing.Color.FromArgb(242, 244, 245);
             line.Location = new System.Drawing.Point(20, 508);
             line.Name = "line";
@@ -110,7 +109,6 @@ namespace QuanLyTacGia.Ui
             //
             // avatarUser
             //
-            avatarUser.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             avatarUser.ImageFit = AntdUI.TFit.Cover;
             avatarUser.Location = new System.Drawing.Point(20, 524);
             avatarUser.Name = "avatarUser";
@@ -120,7 +118,6 @@ namespace QuanLyTacGia.Ui
             //
             // lblName
             //
-            lblName.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblName.BackColor = System.Drawing.Color.Transparent;
             lblName.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F);
             lblName.ForeColor = System.Drawing.Color.FromArgb(13, 20, 38);
@@ -132,7 +129,6 @@ namespace QuanLyTacGia.Ui
             //
             // lblRole
             //
-            lblRole.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblRole.BackColor = System.Drawing.Color.Transparent;
             lblRole.Font = new System.Drawing.Font("Segoe UI", 9F);
             lblRole.ForeColor = System.Drawing.Color.FromArgb(111, 118, 137);
@@ -144,7 +140,6 @@ namespace QuanLyTacGia.Ui
             //
             // btnSignOut
             //
-            btnSignOut.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnSignOut.BorderWidth = 0F;
             btnSignOut.Font = new System.Drawing.Font("Segoe UI", 9.75F);
             btnSignOut.ForeColor = System.Drawing.Color.FromArgb(74, 80, 100);

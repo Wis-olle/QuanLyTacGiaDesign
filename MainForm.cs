@@ -47,8 +47,8 @@ namespace QuanLyTacGia
 
         protected override void OnDpiChanged(DpiChangedEventArgs e)
         {
+            AppTheme.SetScale(e.DeviceDpiNew / 96f, SystemDpi());   // đặt K TRƯỚC khi WinForms co giãn: OnResize của sidebar / trang dùng K mới
             base.OnDpiChanged(e);   // WinForms tự nhân bố cục designer theo DPI mới
-            AppTheme.SetScale(e.DeviceDpiNew / 96f, SystemDpi());
             ApplyBrand();
             dashboard?.Relayout();
             Invalidate(true);      // phần vẽ tay vẽ lại theo K mới

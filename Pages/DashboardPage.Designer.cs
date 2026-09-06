@@ -185,7 +185,6 @@ namespace QuanLyTacGia.Pages
             //
             // btnAdd
             //
-            btnAdd.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             btnAdd.BackExtend = "135, #166BB8, #5047E0";
             btnAdd.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F);
             btnAdd.IconSvg = "PlusOutlined";
@@ -275,7 +274,6 @@ namespace QuanLyTacGia.Pages
             //
             // iconBox1
             //
-            iconBox1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             iconBox1.BackColor = System.Drawing.Color.FromArgb(255, 213, 194);
             iconBox1.ImageFit = AntdUI.TFit.Contain;
             iconBox1.Location = new System.Drawing.Point(238, 24);
@@ -339,7 +337,6 @@ namespace QuanLyTacGia.Pages
             //
             // iconBox2
             //
-            iconBox2.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             iconBox2.BackColor = System.Drawing.Color.FromArgb(220, 230, 255);
             iconBox2.ImageFit = AntdUI.TFit.Contain;
             iconBox2.Location = new System.Drawing.Point(238, 24);
@@ -403,7 +400,6 @@ namespace QuanLyTacGia.Pages
             //
             // iconBox3
             //
-            iconBox3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             iconBox3.BackColor = System.Drawing.Color.FromArgb(220, 230, 255);
             iconBox3.ImageFit = AntdUI.TFit.Contain;
             iconBox3.Location = new System.Drawing.Point(238, 24);
@@ -467,7 +463,6 @@ namespace QuanLyTacGia.Pages
             //
             // iconBox4
             //
-            iconBox4.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             iconBox4.BackColor = System.Drawing.Color.FromArgb(220, 230, 255);
             iconBox4.ImageFit = AntdUI.TFit.Contain;
             iconBox4.Location = new System.Drawing.Point(238, 24);
@@ -684,7 +679,6 @@ namespace QuanLyTacGia.Pages
             //
             // btnAll
             //
-            btnAll.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             btnAll.BorderWidth = 0F;
             btnAll.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F);
             btnAll.ForeColor = System.Drawing.Color.FromArgb(22, 107, 184);

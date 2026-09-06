@@ -54,7 +54,14 @@ public sealed class TacGiaCardView : FlowLayoutPanel
         if (live) PlayAppear();
     }
 
-    /// <summary>Thẻ hiện dần: 15 thẻ đầu lệch nhịp 30 ms, phần sau hiện cùng lúc. Chỉ chạy khi đang giữ (không lặp lại mỗi lần đổi trang).</summary>
+    /// <summary>Giữ mọi thẻ ở trạng thái chưa hiện (mỗi lần mở lại trang, MainForm gọi trước khi chụp ảnh trượt) — <see cref="PlayAppear"/> sẽ cho hiện dần lần lượt.</summary>
+    public void HoldAppear()
+    {
+        foreach (var c in Controls.OfType<AuthorCard>()) c.PrepareAppear();
+        held = true;
+    }
+
+    /// <summary>Thẻ hiện dần: 15 thẻ đầu lệch nhịp 30 ms, phần sau hiện cùng lúc. Chỉ chạy khi đang giữ.</summary>
     public void PlayAppear()
     {
         if (!held) return;

@@ -24,8 +24,8 @@ namespace QuanLyTacGia.Pages
         /// <summary>Editor đang mở trong modal (phục vụ ScreenshotHarness).</summary>
         public TacGiaEditControl? CurrentEditor { get; private set; }
 
-        // ---- Hoạt cảnh xuất hiện (IPageEntrance): thẻ mới tạo giữ ẩn, MainForm trượt trang xong mới cho hiện dần ----
-        public void PrepareEntrance() { }
+        // ---- Hoạt cảnh xuất hiện (IPageEntrance): MỖI LẦN mở trang, thẻ giữ ẩn khi trượt vào, trượt xong hiện dần lần lượt (như Tổng quan chạy lại hoạt cảnh mỗi lần mở) ----
+        public void PrepareEntrance() => cards.HoldAppear();
         public void PlayEntrance() => cards.PlayAppear();
 
         // ---- Hook cho ScreenshotHarness ----

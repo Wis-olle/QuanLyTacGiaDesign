@@ -47,6 +47,7 @@ Không dùng hàm tự viết (`S()`, `AppTheme.*`) trong `*.Designer.cs`: Desig
 | `Panels/TacGiaDetailPanel.cs` + `.Designer.cs`, `Panels/HeaderView.cs` | D1 |
 | `Dialogs/TacGiaEditControl.cs` + `.Designer.cs` | M1 |
 | `Ui/AppTheme.cs` | Token màu / chữ, `K` cho phần vẽ tay, khởi tạo theme AntdUI |
+| `Ui/VietLocalization.cs` | Nhãn tiếng Việt cho AntdUI (lịch bố cục quốc tế, "Hôm nay", "Huỷ"…) — mặc định AntdUI là tiếng Trung |
 | `Ui/Charts.cs`, `Ui/GradientCard.cs`, `Ui/Motion.cs`, `Ui/PulseDot.cs`, `Ui/Brand.cs` | Biểu đồ tự vẽ, hoạ tiết thẻ số liệu, motion, chấm nhịp đập, logo |
 | `Ui/ScreenshotHarness.cs` | Tự chụp 22 màn hình để review (`QLTG_SHOT=<thư mục>`) |
 | `Assets/`, `tools/`, `Models/`, `Data/` | Như bản gốc |

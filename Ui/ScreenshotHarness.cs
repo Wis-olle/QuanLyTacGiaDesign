@@ -106,6 +106,9 @@ public static class ScreenshotHarness
         Log(dir, "open 15"); DuringModal("15-avatar-picker", () => page.CurrentEditor!.OpenAvatarPickerForDemo());
         page.OpenAdd();
 
+        Log(dir, "open 30"); DuringModal("30-date-picker", () => page.CurrentEditor!.OpenDatePickerForDemo());   // lịch tiếng Việt, bố cục quốc tế
+        page.OpenAdd();
+
         Log(dir, "open 06"); DuringModal("06-modal-edit");
         page.OpenEditAt(0);
 

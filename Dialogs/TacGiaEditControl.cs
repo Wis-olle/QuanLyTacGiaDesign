@@ -103,6 +103,16 @@ namespace QuanLyTacGia.Dialogs
         /// <summary>Mở popover chọn avatar mẫu (ScreenshotHarness).</summary>
         public void OpenAvatarPickerForDemo() => OpenAvatarPicker();
 
+        /// <summary>Mở lịch của ô Ngày sinh (ScreenshotHarness): DatePicker chỉ mở khi có click chuột thật → gửi WM_LBUTTONDOWN/UP vào ô.</summary>
+        public void OpenDatePickerForDemo()
+        {
+            var lp = (IntPtr)((18 << 16) | 40);
+            SendMessage(dtpNgaySinh.Handle, 0x201, (IntPtr)1, lp);
+            SendMessage(dtpNgaySinh.Handle, 0x202, IntPtr.Zero, lp);
+        }
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
         /// <summary>Điền giá trị sai để chụp trạng thái lỗi (ScreenshotHarness).</summary>
         public void SetForErrorDemo()
         {

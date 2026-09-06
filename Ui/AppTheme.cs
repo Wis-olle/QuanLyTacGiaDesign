@@ -64,7 +64,6 @@ public static class AppTheme
     // ---------- Màu nhấn ----------
     public static readonly Color Primary         = Hex("#166BB8");   // nút chính, tab, link; chữ trắng 5.0:1
     public static readonly Color PrimarySoft     = Hex("#E3F1FA");
-    public static readonly Color NavActive       = Hex("#3197D2");   // ô icon mục nav đang chọn (đo từ mẫu)
     public static readonly Color Accent          = Hex("#5047E0");   // logo, nút hành động đang chọn (đo từ mẫu)
     public static readonly Color AccentSoft      = Hex("#EEEDFD");
     public static readonly Color InfoSoft        = Hex("#D3E5FF");   // badge "Quản trị viên" (đo từ mẫu)
@@ -158,6 +157,7 @@ public static class AppTheme
     /// <summary>Gọi 1 lần trong Program.cs trước Application.Run.</summary>
     public static void Apply()
     {
+        AntdUI.Localization.Provider = new VietLocalization();   // nhãn tiếng Việt + lịch bố cục quốc tế (mặc định AntdUI là tiếng Trung)
         AntdUI.Config.Font = Body;
         AntdUI.Config.TextRenderingHighQuality = true;
         AntdUI.Config.ShowInWindow = true;

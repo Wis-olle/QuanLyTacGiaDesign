@@ -89,7 +89,7 @@ namespace QuanLyTacGia.Ui
             //
             // indicator
             //
-            indicator.Back = System.Drawing.Color.FromArgb(80, 71, 224);
+            indicator.Back = System.Drawing.Color.FromArgb(22, 107, 184);
             indicator.BorderWidth = 0F;
             indicator.Location = new System.Drawing.Point(0, 58);
             indicator.Name = "indicator";

@@ -4,7 +4,7 @@ using AntdUI;
 namespace QuanLyTacGia.Ui
 {
     /// <summary>
-    /// 1 mục sidebar: ô icon 32 (xanh khi chọn) + nhãn; hover đổi nền cả hàng.
+    /// 1 mục sidebar: ô icon 32 (nền xanh nhạt PrimarySoft + icon Primary khi chọn) + nhãn; hover đổi nền cả hàng.
     /// Kéo từ Toolbox (nhóm "QuanLyTacGiaDesign Components") vào SidebarNav rồi đặt ItemId / Caption / IconSvg trong Properties.
     /// </summary>
     [ToolboxItem(true)]
@@ -53,7 +53,7 @@ namespace QuanLyTacGia.Ui
                 label.Font = active ? AppTheme.BodySemi : AppTheme.Body;
                 label.ForeColor = active ? AppTheme.TextPrimary : AppTheme.TextSecondary;
                 // ô icon đổi màu mượt (160 ms) thay vì nhảy
-                Color fromBg = icon.BackColor, toBg = active ? AppTheme.NavActive : Color.White, fromFg = icon.ForeColor, toFg = active ? Color.White : AppTheme.Icon;
+                Color fromBg = icon.BackColor, toBg = active ? AppTheme.PrimarySoft : Color.White, fromFg = icon.ForeColor, toFg = active ? AppTheme.Primary : AppTheme.Icon;   // ô tint nhạt + icon màu chính (Dribbble 27180532, 25766686), người dùng chọn 06/09/2026
                 anim?.Invoke();
                 anim = Motion.Run(Motion.Fast, p => { icon.BackColor = Motion.Lerp(fromBg, toBg, p); icon.ForeColor = Motion.Lerp(fromFg, toFg, p); });
             }

@@ -39,6 +39,21 @@ public abstract class ChartBase : Control
     }
     /// <summary>Hiện thẳng trạng thái cuối (làm mới dữ liệu).</summary>
     public void ShowFinal() { cancel?.Invoke(); progress = 1f; Invalidate(); }
+    /// <summary>Về trạng thái đầu (chưa vẽ) để trang chụp ảnh rồi trượt vào; sau đó gọi <see cref="Animate"/>.</summary>
+    public void Prepare() { cancel?.Invoke(); progress = 0f; Invalidate(); }
+
+    // Lớp tĩnh (lưới, nhãn trục) vẽ một lần vào bitmap theo kích thước + khoá dữ liệu; mỗi khung animation chỉ vẽ phần động lên trên.
+    Bitmap? layer; (Size size, string key) layerKey;
+    protected Bitmap StaticLayer(string key, Action<Graphics> paint)
+    {
+        if (layer != null && layerKey == (Size, key)) return layer;
+        layer?.Dispose();
+        layer = new Bitmap(Math.Max(1, Width), Math.Max(1, Height));
+        using (var g = Graphics.FromImage(layer)) { Setup(g); g.Clear(BackColor); paint(g); }
+        layerKey = (Size, key);
+        return layer;
+    }
+    protected void DropLayer() { layer?.Dispose(); layer = null; }
 
     protected override void OnMouseLeave(EventArgs e) { SetHover(-1); base.OnMouseLeave(e); }
     protected void SetHover(int i)
@@ -70,7 +85,7 @@ public abstract class ChartBase : Control
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { cancel?.Invoke(); hoverAnim?.Invoke(); dimAnim?.Invoke(); }
+        if (disposing) { cancel?.Invoke(); hoverAnim?.Invoke(); dimAnim?.Invoke(); DropLayer(); }
         base.Dispose(disposing);
     }
 
@@ -148,6 +163,7 @@ public sealed class AreaChart : ChartBase
     {
         this.labels = labels; this.values = values; this.unit = unit;
         if (color is { } c) line = c;
+        DropLayer();
         Invalidate();
     }
 
@@ -169,21 +185,26 @@ public sealed class AreaChart : ChartBase
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics; Setup(g);
-        g.Clear(BackColor);
-        if (values.Length == 0) return;
+        if (values.Length == 0) { g.Clear(BackColor); return; }
         var plot = Plot;
         var (yMax, step) = Nice(values.Max());
+        var pts = Points(plot, yMax);
 
-        // lưới ngang gạch đứt + nhãn Y
-        using (var grid = Dashed(AppTheme.Border))
+        // lớp tĩnh: lưới ngang gạch đứt + nhãn Y + nhãn X (không đổi theo progress / hover)
+        g.DrawImageUnscaled(StaticLayer($"{yMax}|{string.Join(",", labels)}", sg =>
+        {
+            using var grid = Dashed(AppTheme.Border);
             for (int v = 0; v <= yMax; v += step)
             {
                 float y = plot.Bottom - plot.Height * v / (float)yMax;
-                g.DrawLine(grid, plot.Left, y, plot.Right, y);
-                Text(g, v.ToString(), AppTheme.Small, AppTheme.TextMuted, plot.Left - S(10), y, ContentAlignment.MiddleRight);
+                sg.DrawLine(grid, plot.Left, y, plot.Right, y);
+                Text(sg, v.ToString(), AppTheme.Small, AppTheme.TextMuted, plot.Left - S(10), y, ContentAlignment.MiddleRight);
             }
-
-        var pts = Points(plot, yMax);
+            int every = plot.Width < labels.Length * S(34) ? 2 : 1;   // nhãn X: bỏ cách nếu hẹp
+            for (int i = 0; i < labels.Length; i++)
+                if (i % every == 0 || i == labels.Length - 1)
+                    Text(sg, labels[i], AppTheme.Small, AppTheme.TextMuted, pts[i].X, plot.Bottom + S(8), ContentAlignment.TopCenter);
+        }), 0, 0);
         var state = g.Save();
         g.SetClip(new Rectangle(plot.Left - S(4), plot.Top - S(8), plot.Width + S(8), plot.Height + S(9)));   // spline không trồi xuống dưới trục
         if (pts.Length >= 2)
@@ -218,12 +239,6 @@ public sealed class AreaChart : ChartBase
                 g.FillEllipse(dot, pts[i].X - r, pts[i].Y - r, r * 2, r * 2);
                 g.DrawEllipse(ring, pts[i].X - r, pts[i].Y - r, r * 2, r * 2);
             }
-
-        // nhãn X: bỏ cách nếu hẹp
-        int every = plot.Width < labels.Length * S(34) ? 2 : 1;
-        for (int i = 0; i < labels.Length; i++)
-            if (i % every == 0 || i == labels.Length - 1)
-                Text(g, labels[i], AppTheme.Small, AppTheme.TextMuted, pts[i].X, plot.Bottom + S(8), ContentAlignment.TopCenter);
 
         if (hover >= 0 && hover < pts.Length && !float.IsNaN(gx))
             Tooltip(g, $"{labels[hover]} · {values[hover]} {unit}", new PointF(gx, gy), ClientRectangle, dimT);
@@ -388,6 +403,7 @@ public sealed class HBarChart : ChartBase
         this.labels = labels; this.values = values; this.unit = unit;
         if (from is { } f) a = f;
         if (to is { } t) b = t;
+        DropLayer();
         Invalidate();
     }
 
@@ -396,21 +412,23 @@ public sealed class HBarChart : ChartBase
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics; Setup(g);
-        g.Clear(BackColor);
-        if (values.Length == 0) return;
+        if (values.Length == 0) { g.Clear(BackColor); return; }
         var plot = Plot;
         var (max, step) = Nice(values.Max());
         float rowH = plot.Height / (float)values.Length;
         float barH = Math.Min(S(16), rowH * 0.6f);
 
-        // lưới dọc gạch đứt + số trục
-        using (var grid = Dashed(AppTheme.Border))
+        // lớp tĩnh: lưới dọc gạch đứt + số trục
+        g.DrawImageUnscaled(StaticLayer(max.ToString(), sg =>
+        {
+            using var grid = Dashed(AppTheme.Border);
             for (int v = 0; v <= max; v += step)
             {
                 float x = plot.Left + plot.Width * v / (float)max;
-                g.DrawLine(grid, x, plot.Top, x, plot.Bottom);
-                Text(g, v.ToString(), AppTheme.Small, AppTheme.TextMuted, x, plot.Bottom + S(6), ContentAlignment.TopCenter);
+                sg.DrawLine(grid, x, plot.Top, x, plot.Bottom);
+                Text(sg, v.ToString(), AppTheme.Small, AppTheme.TextMuted, x, plot.Bottom + S(6), ContentAlignment.TopCenter);
             }
+        }), 0, 0);
 
         for (int i = 0; i < values.Length; i++)
         {

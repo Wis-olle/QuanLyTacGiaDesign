@@ -19,6 +19,7 @@ namespace QuanLyTacGia
         TacGiaListPage? tacGiaList;
         SettingsPage? settings;
         string currentId = "dashboard";
+        Action? slide;   // cú trượt trang đang chạy (huỷ khi đổi trang tiếp)
 
         public TacGiaListPage? ListPage => tacGiaList;
 
@@ -26,6 +27,7 @@ namespace QuanLyTacGia
         {
             AppTheme.SetScale(DeviceDpi / 96f, SystemDpi());   // trước InitializeComponent để font / icon vẽ tay đúng K
             InitializeComponent();
+            AppTheme.DoubleBuffer(content);
             AutoHandDpi = false;   // WinForms (AutoScaleMode.Dpi) đã co giãn; không để AntdUI Control.Scale lần nữa
 
             userAvatar = AppTheme.UserAvatar(UserName);
@@ -68,13 +70,22 @@ namespace QuanLyTacGia
                 "settings" => settings ??= new SettingsPage(),
                 _ => Dashboard(),
             };
-            if (content.Controls.Count == 1 && content.Controls[0] == page) return;
+            if (content.Controls.Count == 1 && content.Controls[0] == page)
+            {
+                (page as IPageEntrance)?.PlayEntrance();   // bấm lại trang đang mở: RefreshData đã đưa về trạng thái đầu → chạy lại hoạt cảnh (như trước)
+                return;
+            }
+            slide?.Invoke();   // đang trượt dở thì kết thúc ngay
             content.SuspendLayout();
             content.Controls.Clear();
             page.Dock = DockStyle.Fill;
+            page.Visible = true;
             content.Controls.Add(page);
-            content.ResumeLayout();
-            Motion.SlideIn(content, new Padding(0, AppTheme.S(16), AppTheme.S(16), AppTheme.S(16)));
+            content.ResumeLayout(true);   // bố cục xong mới chụp ảnh trang
+            // Trượt bằng ảnh chụp (không dựng lại bố cục mỗi khung); trang có hoạt cảnh thì chụp ở trạng thái đầu, trượt xong mới chạy hoạt cảnh
+            var entrance = page as IPageEntrance;
+            entrance?.PrepareEntrance();
+            slide = Motion.SlideIn(content, page, () => { slide = null; entrance?.PlayEntrance(); });
         }
 
         DashboardPage Dashboard()

@@ -13,7 +13,7 @@ namespace QuanLyTacGia.Pages
     /// P2 Danh sách tác giả: header (tiêu đề, avatar group, tab giới tính, chip tháng, tìm kiếm, toggle bảng/thẻ, Thêm, ⋯) + bảng / lưới thẻ + phân trang.
     /// Bố cục tĩnh trong TacGiaListPage.Designer.cs; ở đây: dữ liệu, lọc, mở D1 / M1 / M2, ẩn cột theo bề rộng.
     /// </summary>
-    public partial class TacGiaListPage : UserControl
+    public partial class TacGiaListPage : UserControl, IPageEntrance
     {
         readonly Avatar[] stack;
         bool monthOnly;
@@ -23,6 +23,10 @@ namespace QuanLyTacGia.Pages
 
         /// <summary>Editor đang mở trong modal (phục vụ ScreenshotHarness).</summary>
         public TacGiaEditControl? CurrentEditor { get; private set; }
+
+        // ---- Hoạt cảnh xuất hiện (IPageEntrance): thẻ mới tạo giữ ẩn, MainForm trượt trang xong mới cho hiện dần ----
+        public void PrepareEntrance() { }
+        public void PlayEntrance() => cards.PlayAppear();
 
         // ---- Hook cho ScreenshotHarness ----
         public void ShowDetailAt(int i) { if (i < filtered.Count) ShowDetail(filtered[i]); }
@@ -54,6 +58,8 @@ namespace QuanLyTacGia.Pages
         public TacGiaListPage()
         {
             InitializeComponent();
+            DoubleBuffered = true;
+            AppTheme.DoubleBuffer(header);
             stack = [stack1, stack2, stack3, stack4, stack5];
             if (LicenseManager.UsageMode != LicenseUsageMode.Runtime) return;   // đang mở trong Designer
 

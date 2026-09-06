@@ -47,6 +47,9 @@ public static class ScreenshotHarness
         await Shot("21-dashboard-entrance", 380);   // giữa lúc thẻ hiện dần / số đang đếm
         await Shot("01-dashboard", 1500);
 
+        form.GoTo("dashboard");   // bấm lại trang đang mở: phải chạy lại hoạt cảnh, không được kẹt ở trạng thái trắng
+        await Shot("29-dashboard-again", 1500);
+
         // rê chuột vào thẻ "Nam" để hoạ tiết chuyển động (di chuyển con trỏ thật → MouseEnter)
         Cursor.Position = form.PointToScreen(new Point((int)(form.ClientSize.Width * 0.46), (int)(form.ClientSize.Height * 0.26)));
         await Shot("22-card-hover", 900);
@@ -63,7 +66,8 @@ public static class ScreenshotHarness
         await Task.Delay(400);
 
         form.GoTo("tacgia");
-        await Shot("02-list");
+        await Shot("27-list-slide", 90);   // giữa cú trượt trang (ảnh chụp trang đang trượt lên)
+        await Shot("02-list", 1000);   // thẻ hiện dần xong sau trượt 240 + 14 × 30 + 320 ms
         var page = form.ListPage!;
 
         // rê chuột vào thẻ tác giả đầu tiên: nhấc lên + bóng + avatar phóng
@@ -140,6 +144,9 @@ public static class ScreenshotHarness
         await Shot("19-dashboard-1536x864", 1200);
         form.GoTo("tacgia");
         await Shot("20-list-1536x864", 900);
+
+        form.GoTo("dashboard");
+        await Shot("28-dashboard-slide", 90);   // giữa cú trượt: thẻ phủ trắng, số 0, biểu đồ trống (trạng thái đầu chụp vào ảnh)
     }
 
     static void Log(string dir, string msg) => File.AppendAllText(Path.Combine(dir, "log.txt"), $"{DateTime.Now:HH:mm:ss.fff} {msg}{Environment.NewLine}");

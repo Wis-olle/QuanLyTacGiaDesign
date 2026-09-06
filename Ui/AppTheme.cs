@@ -151,6 +151,10 @@ public static class AppTheme
 
     public static Color Hex(string hex) => ColorTranslator.FromHtml(hex);
 
+    /// <summary>Bật DoubleBuffered cho control chuẩn WinForms (Panel, FlowLayoutPanel…) — thuộc tính protected nên đặt qua reflection. Bớt nháy khi đổi kích thước / trượt trang.</summary>
+    public static void DoubleBuffer(Control c) =>
+        typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.SetValue(c, true);
+
     /// <summary>Gọi 1 lần trong Program.cs trước Application.Run.</summary>
     public static void Apply()
     {

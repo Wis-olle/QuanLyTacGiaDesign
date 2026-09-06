@@ -10,6 +10,7 @@ namespace QuanLyTacGia.Pages
         public SettingsPage()
         {
             InitializeComponent();
+            DoubleBuffered = true;
             if (LicenseManager.UsageMode != LicenseUsageMode.Runtime) return;
             txtFolder.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             btnSave.Click += (_, _) => Toast.Success(FindForm()!, "Đã lưu cài đặt");

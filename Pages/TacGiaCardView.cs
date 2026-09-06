@@ -23,12 +23,16 @@ public sealed class TacGiaCardView : FlowLayoutPanel
 
     public TacGiaCardView()
     {
+        DoubleBuffered = true;
         AutoScroll = true; WrapContents = true; FlowDirection = FlowDirection.LeftToRight;
         BackColor = Color.White; Padding = new Padding(16, 4, 16, 8);   // px 96 (đặt lại trong Designer của trang)
     }
 
+    bool held;   // thẻ mới tạo đang giữ ẩn, chờ PlayAppear: trang chưa hiện trên màn (MainForm chụp ảnh trang rồi trượt vào, trượt xong mới gọi)
+
     public void SetData(IReadOnlyList<TacGia> list)
     {
+        bool live = IsHandleCreated && Visible && FindForm() is { Visible: true };   // đang hiện trên màn (lọc, đổi trang) → hiện dần ngay
         SuspendLayout();
         foreach (var c in Controls.Cast<Control>().ToList()) { Controls.Remove(c); if (c != empty) c.Dispose(); }
         if (list.Count == 0) Controls.Add(empty);
@@ -36,7 +40,7 @@ public sealed class TacGiaCardView : FlowLayoutPanel
         foreach (var t in list)
         {
             var card = new AuthorCard(t) { Margin = new Padding(S(8) - AuthorCard.Inset) };   // lề 4 + vùng bóng 4 trong control = 8 như cũ
-            card.Appear(Math.Min(idx++, 14) * 30);   // 15 thẻ đầu xuất hiện lệch nhịp 30 ms, phần sau hiện cùng lúc
+            card.PrepareAppear();
             card.Clicked += () => View?.Invoke(t);
             card.DoubleClicked += () => EditRequested?.Invoke(t);
             card.Action += id => { if (id == "view") View?.Invoke(t); else if (id == "edit") EditRequested?.Invoke(t); else DeleteRequested?.Invoke(t); };
@@ -46,6 +50,17 @@ public sealed class TacGiaCardView : FlowLayoutPanel
         if (VerticalScroll.Visible) VerticalScroll.Value = 0;
         lastW = 0;
         Relayout();
+        held = true;
+        if (live) PlayAppear();
+    }
+
+    /// <summary>Thẻ hiện dần: 15 thẻ đầu lệch nhịp 30 ms, phần sau hiện cùng lúc. Chỉ chạy khi đang giữ (không lặp lại mỗi lần đổi trang).</summary>
+    public void PlayAppear()
+    {
+        if (!held) return;
+        held = false;
+        int idx = 0;
+        foreach (var c in Controls.OfType<AuthorCard>()) c.Appear(Math.Min(idx++, 14) * 30);
     }
 
     int lastW;
@@ -101,6 +116,9 @@ public sealed class AuthorCard : Control
         BackColor = Color.White;
         Cursor = Cursors.Hand;
     }
+
+    /// <summary>Giữ ở trạng thái chưa hiện (alpha 0) chờ <see cref="Appear"/>.</summary>
+    public void PrepareAppear() { appearAnim?.Invoke(); appear = 0f; Invalidate(); }
 
     /// <summary>Xuất hiện: trượt lên 14 px + hiện dần trong 320 ms sau delay ms.</summary>
     public void Appear(int delay)

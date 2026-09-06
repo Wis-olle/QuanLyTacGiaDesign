@@ -169,29 +169,49 @@ public static class GradientCard
         return p;
     }
 
-    /// <summary>Thẻ số liệu phẳng theo mẫu. Gọi SAU khi đã thêm control con để hover bắt được trên cả thẻ.
-    /// Trả về hàm Reveal(delayMs): thẻ phủ trắng rồi hiện dần trong 480 ms sau delay (xuất hiện lệch nhịp).</summary>
-    public static Action<int> ApplyStat(AntdUI.Panel card, Tone tone, Deco deco, Action<float>? onHover = null) =>
+    /// <summary>Hoạt cảnh hiện dần của thẻ: <see cref="Prepare"/> phủ trắng ngay (trạng thái đầu để chụp ảnh trang), <see cref="Play"/>(delayMs) hiện dần trong 480 ms sau delay.</summary>
+    public readonly record struct Reveal(Action Prepare, Action<int> Play);
+
+    /// <summary>Thẻ số liệu phẳng theo mẫu. Gọi SAU khi đã thêm control con để hover bắt được trên cả thẻ. Trả về <see cref="Reveal"/>.</summary>
+    public static Reveal ApplyStat(AntdUI.Panel card, Tone tone, Deco deco, Action<float>? onHover = null) =>
         Bind(card, tone.Base, (wash, hv) => MakeStat(card.Width, card.Height, tone, deco, wash, hv), hover: true, onHover);
 
     /// <summary>Banner gradient (drawer).</summary>
     public static void Apply(AntdUI.Panel card, (Color A, Color B) grad, bool hover = false) =>
         Bind(card, grad.A, (wash, _) => Make(card.Width, card.Height, grad.A, grad.B, wash), hover, null);
 
-    /// <summary>Hover: hoverT 0 → 1 trong 240 ms ease-out (hoạ tiết nở / trôi, nền sáng 8 %), rời chuột trôi về. Một nhịp, không lặp.</summary>
-    static Action<int> Bind(AntdUI.Panel card, Color back, Func<float, float, Bitmap> draw, bool hover, Action<float>? onHover)
+    /// <summary>
+    /// Hover: hoverT 0 → 1 trong 240 ms ease-out (hoạ tiết nở / trôi, nền sáng 8 %), rời chuột trôi về. Một nhịp, không lặp.
+    /// Hiệu năng: hoạ tiết (draw) chỉ vẽ lại khi đổi kích thước hoặc hoverT; lớp phủ trắng (wash) chép ảnh cache rồi tô đè — lúc thẻ hiện dần không vẽ lại hoạ tiết.
+    /// </summary>
+    static Reveal Bind(AntdUI.Panel card, Color back, Func<float, float, Bitmap> draw, bool hover, Action<float>? onHover)
     {
         card.Back = back;
         card.BackgroundImageLayout = TFit.Fill;
         float wash = 0f, hoverT = 0f;
         Action? anim = null, hoverAnim = null;
+        Bitmap? baseBmp = null; Size baseSize = Size.Empty; float baseHover = -1f;
         void Redraw()
         {
             if (card.Width <= 0 || card.Height <= 0 || card.IsDisposed) return;
+            if (baseBmp == null || baseSize != card.Size || baseHover != hoverT)
+            {
+                baseBmp?.Dispose();
+                baseBmp = draw(0f, hoverT);
+                baseSize = card.Size; baseHover = hoverT;
+            }
+            var img = new Bitmap(baseBmp);
+            if (wash > 0f)
+            {
+                using var g = Graphics.FromImage(img);
+                using var white = new SolidBrush(Color.FromArgb((int)(255 * Math.Min(1f, wash)), 255, 255, 255));
+                g.FillRectangle(white, 0, 0, img.Width, img.Height);
+            }
             var old = card.BackgroundImage;
-            card.BackgroundImage = draw(wash, hoverT);
+            card.BackgroundImage = img;
             old?.Dispose();
         }
+        card.Disposed += (_, _) => { baseBmp?.Dispose(); baseBmp = null; };
         void HoverTo(float target)
         {
             hoverAnim?.Invoke();
@@ -232,6 +252,8 @@ public static class GradientCard
             }
             card.Disposed += (_, _) => { hoverAnim?.Invoke(); anim?.Invoke(); };
         }
-        return delay => { anim?.Invoke(); wash = 1f; Redraw(); anim = Motion.Delay(delay, () => To(0f, 480)); };
+        return new Reveal(
+            Prepare: () => { anim?.Invoke(); wash = 1f; Redraw(); },
+            Play: delay => { anim?.Invoke(); wash = 1f; Redraw(); anim = Motion.Delay(delay, () => To(0f, 480)); });
     }
 }

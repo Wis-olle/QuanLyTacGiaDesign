@@ -11,18 +11,21 @@ namespace QuanLyTacGia.Pages
     /// Bố cục tĩnh nằm trong DashboardPage.Designer.cs (px 96 DPI, WinForms tự nhân theo DPI). File này chỉ giữ: dữ liệu, hoạ tiết thẻ,
     /// vị trí chữ trong thẻ theo chiều cao (Resize), chia chiều cao hai hàng biểu đồ (Relayout), motion.
     /// </summary>
-    public partial class DashboardPage : UserControl
+    public partial class DashboardPage : UserControl, IPageEntrance
     {
         readonly AntdUI.Panel[] cards;
         readonly AntdUI.Label[] titles, numbers, subs;
         readonly Avatar[] iconBoxes;
-        readonly Action<int>[] reveal = new Action<int>[4];
+        readonly GradientCard.Reveal[] reveal = new GradientCard.Reveal[4];
+        readonly Action?[] countAnim = new Action?[4];
+        int[] values = new int[4];
         Action<ListPreset> view = _ => { };
         Action onAdd = () => { };
 
         public DashboardPage()
         {
             InitializeComponent();
+            DoubleBuffered = true;
             cards = [card1, card2, card3, card4];
             titles = [lblTitle1, lblTitle2, lblTitle3, lblTitle4];
             numbers = [lblNumber1, lblNumber2, lblNumber3, lblNumber4];
@@ -145,7 +148,7 @@ namespace QuanLyTacGia.Pages
             int thisMonth = all.Count(t => t.NgayTao.Year == now.Year && t.NgayTao.Month == now.Month);
             var prev = now.AddMonths(-1);
             int lastMonth = all.Count(t => t.NgayTao.Year == prev.Year && t.NgayTao.Month == prev.Month);
-            int[] values = [all.Count, nam, nu, thisMonth];
+            values = [all.Count, nam, nu, thisMonth];
             int pNam = all.Count == 0 ? 0 : (int)Math.Round(nam * 100.0 / all.Count);
             int diff = thisMonth - lastMonth;
             // chữ phụ có icon nhỏ phía trước như mẫu ("⌥ 12% vs last month")
@@ -154,14 +157,6 @@ namespace QuanLyTacGia.Pages
             (subs[2].PrefixSvg, subs[2].Text) = ("PieChartOutlined", $"{100 - pNam}% tổng số tác giả");
             (subs[3].PrefixSvg, subs[3].Text) = diff == 0 ? ("MinusOutlined", $"Bằng tháng trước ({lastMonth})")
                 : (diff > 0 ? "RiseOutlined" : "FallOutlined", $"{(diff > 0 ? "+" : "−")}{Math.Abs(diff)} so với tháng trước");
-            // Xuất hiện lệch nhịp mỗi lần mở trang: thẻ i hiện dần sau i × 60 ms, số đếm lên ngay sau đó
-            for (int i = 0; i < 4; i++)
-            {
-                int d = i * Motion.Stagger, v = values[i]; var lbl = numbers[i];
-                reveal[i](d);
-                lbl.Text = "0";
-                Motion.Delay(d + 120, () => Motion.CountUp(lbl, v));
-            }
 
             // Theo tháng: 12 tháng gần nhất
             var monthLabels = new string[12]; var monthCounts = new int[12];
@@ -187,10 +182,29 @@ namespace QuanLyTacGia.Pages
             }
             chartDecades.SetData(decLabels.ToArray(), decCounts.ToArray(), "tác giả", AppTheme.CardBlue.Base, AppTheme.ChartBlueLight);
 
-            // Biểu đồ vẽ dần sau các thẻ, lệch nhịp 120 ms
-            chartMonths.Animate(240); chartGender.Animate(360); chartDecades.Animate(480);
 
             recent.DataSource = all.OrderByDescending(t => t.NgayTao).ThenByDescending(t => t.MaTacGia).Take(5).Select(t => new TacGiaRow(t)).ToList();
+            PrepareEntrance();
+        }
+
+        /// <summary>Trạng thái đầu của hoạt cảnh: thẻ phủ trắng, số 0, biểu đồ trống — MainForm chụp ảnh trang ở trạng thái này rồi trượt vào.</summary>
+        public void PrepareEntrance()
+        {
+            for (int i = 0; i < 4; i++) { countAnim[i]?.Invoke(); reveal[i].Prepare?.Invoke(); numbers[i].Text = "0"; }
+            chartMonths.Prepare(); chartGender.Prepare(); chartDecades.Prepare();
+        }
+
+        /// <summary>Sau khi trang trượt xong (tuần tự, không chồng lên cú trượt): thẻ i hiện dần sau i × 60 ms, số đếm lên sau đó 120 ms, biểu đồ vẽ dần 240 / 360 / 480.</summary>
+        public void PlayEntrance()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                int d = i * Motion.Stagger, v = values[i], k = i; var lbl = numbers[i];
+                reveal[i].Play?.Invoke(d);
+                countAnim[i]?.Invoke();
+                countAnim[i] = Motion.Delay(d + 120, () => countAnim[k] = Motion.CountUp(lbl, v));
+            }
+            chartMonths.Animate(240); chartGender.Animate(360); chartDecades.Animate(480);
         }
     }
 }

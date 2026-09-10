@@ -204,7 +204,7 @@ namespace QuanLyTacGia.Pages
                 countAnim[i]?.Invoke();
                 countAnim[i] = Motion.Delay(d + 120, () => countAnim[k] = Motion.CountUp(lbl, v));
             }
-            chartMonths.Animate(240); chartGender.Animate(360); chartDecades.Animate(480);
+            chartMonths.Animate(240, 900); chartGender.Animate(360); chartDecades.Animate(480);   // area chart quét ngang 900 ms
         }
     }
 }

@@ -81,6 +81,30 @@ public static class Motion
         return Add(new Anim { Ms = Math.Max(1, periodMs), Step = step, Loop = true });
     }
 
+    /// <summary>
+    /// Lò xo giảm chấn (cảm giác "dây co giãn" như spring của framer-motion): giá trị đuổi theo target với độ trễ và vượt nhẹ rồi dừng.
+    /// stiffness / damping mặc định 150 / 16 (tỉ số tắt dần ≈ 0,65 → vượt nhẹ một nhịp). Tự dừng khi đã tới đích; gọi settled khi dừng. Trả về hàm huỷ.
+    /// </summary>
+    public static Action Spring(Func<float> target, Func<float> current, Action<float> set, Action? settled = null, float stiffness = 150f, float damping = 16f)
+    {
+        if (!AntdUI.Config.Animation) { set(target()); settled?.Invoke(); return () => { }; }
+        float v = 0f; long last = -1;
+        var sw = Stopwatch.StartNew();
+        Action? cancel = null;
+        cancel = Loop(1000, _ =>
+        {
+            long now = sw.ElapsedMilliseconds;
+            float dt = last < 0 ? 0.016f : Math.Min(0.05f, (now - last) / 1000f);   // kẹp dt để ổn định khi rớt khung
+            last = now;
+            float x = current(), t = target();
+            v += ((t - x) * stiffness - v * damping) * dt;
+            x += v * dt;
+            if (Math.Abs(t - x) < 0.3f && Math.Abs(v) < 2f) { set(t); cancel?.Invoke(); settled?.Invoke(); return; }
+            set(x);
+        });
+        return cancel;
+    }
+
     public static Color Lerp(Color a, Color b, float t)
     {
         t = Math.Clamp(t, 0f, 1f);

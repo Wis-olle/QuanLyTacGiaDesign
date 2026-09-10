@@ -31,11 +31,11 @@ public abstract class ChartBase : Control
     }
 
     /// <summary>Vẽ dần từ 0 → 1 trong 700 ms, bắt đầu sau delay ms (lệch nhịp với các biểu đồ khác).</summary>
-    public void Animate(int delay = 0)
+    public void Animate(int delay = 0, int ms = Motion.Slow)
     {
         cancel?.Invoke();
         progress = 0f; Invalidate();
-        cancel = Motion.Delay(delay, () => cancel = Motion.Run(Motion.Slow, p => { progress = p; Invalidate(); }));
+        cancel = Motion.Delay(delay, () => cancel = Motion.Run(ms, p => { progress = p; Invalidate(); }));
     }
     /// <summary>Hiện thẳng trạng thái cuối (làm mới dữ liệu).</summary>
     public void ShowFinal() { cancel?.Invoke(); progress = 1f; Invalidate(); }
@@ -148,15 +148,22 @@ public abstract class ChartBase : Control
     }
 }
 
-/// <summary>Area chart spline: gradient mờ dần, chấm trắng viền màu, hover có đường dóng đứt + tooltip.</summary>
+/// <summary>
+/// Area chart spline: gradient mờ dần, chấm trắng viền màu.
+/// XUẤT HIỆN kiểu clip reveal (Recharts Area mặc định): hình chữ nhật cắt mở rộng trái → phải lộ dần cả đường lẫn phần tô, 900 ms ease-out.
+/// HOVER kiểu "clipped area" (21st.dev "Advanced Stats" ClippedAreaChart, người dùng mô tả 06/09/2026): mép cắt ĐUỔI THEO CON TRỎ bằng LÒ XO
+/// (Motion.Spring — trễ và vượt nhẹ như dây co giãn) — bên trái là biểu đồ đặc, bên phải chỉ còn nét rất mờ (alpha 40) và tô gần như không (alpha 12); tại mép là một VẠCH DỌC đứt
+/// suốt chiều cao đồ thị với pill giá trị (màu đường, chữ trắng) ở đỉnh vạch — giá trị hiện trên vạch, không bám vào đường cong; rời chuột thì mép
+/// lò xo mở lại tới mép phải và lớp mờ tan.
+/// </summary>
 public sealed class AreaChart : ChartBase
 {
     string[] labels = [];
     int[] values = [];
     string unit = "";
     Color line = AppTheme.CardViolet.Base;
-    float gx = float.NaN, gy;   // vị trí đường dóng / tooltip, trượt mượt giữa các điểm khi đổi hover
-    Action? glide;
+    float clipX = float.NaN, clipTarget;   // mép cắt khi hover: lò xo đuổi theo con trỏ; rời chuột → mở về mép phải
+    Action? spring;
     static int PadL => S(40); static int PadR => S(16); static int PadT => S(16); static int PadB => S(30);
 
     public void SetData(string[] labels, int[] values, string unit, Color? color = null)
@@ -168,6 +175,7 @@ public sealed class AreaChart : ChartBase
     }
 
     Rectangle Plot => new(PadL, PadT, Math.Max(10, Width - PadL - PadR), Math.Max(10, Height - PadT - PadB));
+    float FullRight => Plot.Right + S(4);
 
     PointF[] Points(Rectangle plot, int yMax)
     {
@@ -176,10 +184,18 @@ public sealed class AreaChart : ChartBase
         for (int i = 0; i < n; i++)
         {
             float x = n == 1 ? plot.Left + plot.Width / 2f : plot.Left + plot.Width * i / (float)(n - 1);
-            float y = plot.Bottom - plot.Height * (values[i] / (float)yMax) * progress;
+            float y = plot.Bottom - plot.Height * (values[i] / (float)yMax);   // vị trí thật; xuất hiện bằng clip quét ngang, không kéo giãn Y
             pts[i] = new PointF(x, y);
         }
         return pts;
+    }
+
+    /// <summary>Mép cắt đuổi theo target bằng lò xo (một bộ lò xo chạy liên tục tới khi dừng hẳn; đổi target không làm giật).</summary>
+    void FollowTo(float target)
+    {
+        clipTarget = target;
+        if (float.IsNaN(clipX)) clipX = target;
+        spring ??= Motion.Spring(() => clipTarget, () => clipX, x => { clipX = x; Invalidate(); }, settled: () => spring = null);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -205,8 +221,13 @@ public sealed class AreaChart : ChartBase
                 if (i % every == 0 || i == labels.Length - 1)
                     Text(sg, labels[i], AppTheme.Small, AppTheme.TextMuted, pts[i].X, plot.Bottom + S(8), ContentAlignment.TopCenter);
         }), 0, 0);
-        var state = g.Save();
-        g.SetClip(new Rectangle(plot.Left - S(4), plot.Top - S(8), plot.Width + S(8), plot.Height + S(9)));   // spline không trồi xuống dưới trục
+
+        // mép cắt: lúc xuất hiện = Left + Width × progress; khi hover = con trỏ (clipX); bình thường = hết bề rộng
+        bool revealing = progress < 1f;
+        bool hovering = !revealing && dimT > 0f && !float.IsNaN(clipX);
+        float clipL = plot.Left - S(4), fullR = FullRight;
+        float edge = revealing ? plot.Left + plot.Width * progress : hovering ? Math.Clamp(clipX, plot.Left, plot.Right) : fullR;
+        float clipTop = plot.Top - S(8), clipH = plot.Height + S(9), tipY = float.NaN;   // clip cũng chặn spline trồi xuống dưới trục
         if (pts.Length >= 2)
         {
             using var area = new GraphicsPath();
@@ -214,58 +235,133 @@ public sealed class AreaChart : ChartBase
             area.AddLine(pts[^1], new PointF(pts[^1].X, plot.Bottom));
             area.AddLine(new PointF(pts[^1].X, plot.Bottom), new PointF(pts[0].X, plot.Bottom));
             area.CloseFigure();
-            using var fill = new LinearGradientBrush(new Rectangle(plot.Left, plot.Top - S(8), plot.Width, plot.Height + S(9)), Color.FromArgb(105, line), Color.FromArgb(0, line), LinearGradientMode.Vertical);
-            g.FillPath(fill, area);
             using var curve = new GraphicsPath();
             curve.AddCurve(pts, 0.4f);
-            using var pen = new Pen(line, SF(2.5f)) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round };
-            g.DrawPath(pen, curve);
-        }
-        g.Restore(state);
+            var gradRect = new Rectangle(plot.Left, (int)clipTop, plot.Width, (int)clipH);
 
-        // đường dóng hover: từ điểm xuống trục (mẫu Seative), tại vị trí trượt gx
-        if (hover >= 0 && hover < pts.Length && !float.IsNaN(gx))
+            // lớp mờ bên phải mép cắt (chỉ khi hover): nét alpha 40, tô alpha 12 — "phần chưa tới" (người dùng muốn mờ hơn nữa, 06/09/2026)
+            if (hovering)
+            {
+                var st = g.Save();
+                g.SetClip(new RectangleF(edge, clipTop, Math.Max(0f, fullR - edge), clipH));
+                using var faintFill = new LinearGradientBrush(gradRect, Color.FromArgb((int)(12 * dimT), line), Color.FromArgb(0, line), LinearGradientMode.Vertical);
+                g.FillPath(faintFill, area);
+                using var faintPen = new Pen(Color.FromArgb((int)(40 * dimT), line), SF(2.5f)) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round };
+                g.DrawPath(faintPen, curve);
+                g.Restore(st);
+            }
+            // lớp đặc: từ mép trái tới mép cắt
+            {
+                var st = g.Save();
+                g.SetClip(new RectangleF(clipL, clipTop, Math.Max(0f, edge - clipL), clipH));
+                using var fill = new LinearGradientBrush(gradRect, Color.FromArgb(105, line), Color.FromArgb(0, line), LinearGradientMode.Vertical);
+                g.FillPath(fill, area);
+                using var pen = new Pen(line, SF(2.5f)) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round };
+                g.DrawPath(pen, curve);
+                g.Restore(st);
+            }
+            if (revealing) tipY = CurveY(curve, edge);
+        }
+
+        // lúc xuất hiện: đầu bút ở mép quét (chấm + quầng + vạch dóng xuống trục)
+        if (revealing && !float.IsNaN(tipY)) DrawTip(g, edge, tipY, plot.Bottom, 1f);
+
+        // khi hover: vạch dọc đứt suốt chiều cao đồ thị tại mép cắt + pill giá trị ở đỉnh vạch (mẫu: giá trị trên vạch, không bám đường cong)
+        if (hovering)
         {
-            using var guide = Dashed(Color.FromArgb((int)(140 * dimT), line));
-            g.DrawLine(guide, gx, gy, gx, plot.Bottom);
+            using var cursor = Dashed(Color.FromArgb((int)(150 * dimT), line));
+            g.DrawLine(cursor, edge, S(2), edge, plot.Bottom);
+            if (hover >= 0 && hover < values.Length) ValuePill(g, $"{values[hover]} {unit}", edge, dimT);
         }
 
-        // chấm dữ liệu: chấm được trỏ to dần, các chấm khác mờ còn 60 %
+        // chấm dữ liệu: lúc xuất hiện bật lên khi mép quét đi qua; khi hover chấm bên phải mép mờ đi, chấm gần nhất to dần
         using (var dot = new SolidBrush(Color.White))
             for (int i = 0; i < pts.Length; i++)
             {
-                float r = SF(4f) + SF(2f) * (i == hover ? hoverT : 0f);
-                using var ring = new Pen(Color.FromArgb(i == hover ? 255 : (int)(255 - 100 * dimT), line), SF(2f));
+                float k = revealing ? Math.Clamp((edge - pts[i].X) / S(18), 0f, 1f) : 1f;
+                if (k <= 0f) continue;
+                float r = (SF(4f) + SF(2f) * (i == hover ? hoverT : 0f)) * k;
+                int alpha = !hovering ? 255 : pts[i].X > edge + 0.5f ? (int)(255 - 205 * dimT) : i == hover ? 255 : (int)(255 - 60 * dimT);   // chấm bên phải mép còn 20 %
+                using var ring = new Pen(Color.FromArgb(alpha, line), SF(2f));
                 g.FillEllipse(dot, pts[i].X - r, pts[i].Y - r, r * 2, r * 2);
                 g.DrawEllipse(ring, pts[i].X - r, pts[i].Y - r, r * 2, r * 2);
             }
 
-        if (hover >= 0 && hover < pts.Length && !float.IsNaN(gx))
-            Tooltip(g, $"{labels[hover]} · {values[hover]} {unit}", new PointF(gx, gy), ClientRectangle, dimT);
     }
 
-    protected override void OnHoverChanged(int prev, int now)
+    /// <summary>Pill giá trị ở đỉnh vạch dọc: nền màu đường, chữ trắng Small Semibold, canh giữa theo x, kẹp trong control.</summary>
+    void ValuePill(Graphics g, string text, float x, float alpha)
     {
-        var pts = Points(Plot, Nice(values.Max()).Max);
-        if (now < 0 || now >= pts.Length) return;
-        var target = pts[now];
-        glide?.Invoke();
-        if (prev < 0 || float.IsNaN(gx)) { gx = target.X; gy = target.Y; return; }   // vừa vào: đặt thẳng
-        float x0 = gx, y0 = gy;
-        glide = Motion.Run(Motion.Fast, p => { gx = x0 + (target.X - x0) * p; gy = y0 + (target.Y - y0) * p; Invalidate(); });
+        var size = g.MeasureString(text, AppTheme.SmallSemi);
+        float w = size.Width + S(14), h = size.Height + S(6);
+        float px = Math.Clamp(x - w / 2, 0, Math.Max(0, Width - w)), py = S(2);
+        using var path = RoundRect(new RectangleF(px, py, w, h), S(6));
+        using var back = new SolidBrush(Color.FromArgb((int)(255 * alpha), line));
+        g.FillPath(back, path);
+        using var fore = new SolidBrush(Color.FromArgb((int)(255 * alpha), Color.White));
+        g.DrawString(text, AppTheme.SmallSemi, fore, px + S(7), py + S(3));
+    }
+
+    void DrawTip(Graphics g, float x, float y, float bottom, float alpha)
+    {
+        if (alpha <= 0f) return;
+        using var lead = Dashed(Color.FromArgb((int)(120 * alpha), line));
+        g.DrawLine(lead, x, y, x, bottom);
+        using var glow = new SolidBrush(Color.FromArgb((int)(40 * alpha), line));
+        float gr = SF(9f);
+        g.FillEllipse(glow, x - gr, y - gr, gr * 2, gr * 2);
+        using var tipDot = new SolidBrush(Color.FromArgb((int)(255 * alpha), Color.White));
+        using var tipRing = new Pen(Color.FromArgb((int)(255 * alpha), line), SF(2.5f));
+        float tr = SF(4.5f);
+        g.FillEllipse(tipDot, x - tr, y - tr, tr * 2, tr * 2);
+        g.DrawEllipse(tipRing, x - tr, y - tr, tr * 2, tr * 2);
+    }
+
+    /// <summary>Y của spline tại x (làm phẳng đường cong rồi nội suy) — vị trí đầu bút.</summary>
+    static float CurveY(GraphicsPath curve, float x)
+    {
+        using var flat = (GraphicsPath)curve.Clone();
+        flat.Flatten(null, 0.25f);
+        var p = flat.PathPoints;
+        if (p.Length == 0) return float.NaN;
+        if (x <= p[0].X) return p[0].Y;
+        for (int i = 1; i < p.Length; i++)
+            if (p[i].X >= x)
+            {
+                float dx = p[i].X - p[i - 1].X;
+                return dx <= 0.001f ? p[i].Y : p[i - 1].Y + (p[i].Y - p[i - 1].Y) * (x - p[i - 1].X) / dx;
+            }
+        return p[^1].Y;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        if (values.Length == 0) return;
+        if (values.Length == 0 || progress < 1f) return;
         var plot = Plot;
-        if (e.Y < plot.Top - S(8) || e.Y > plot.Bottom + S(8)) { SetHover(-1); return; }
-        // điểm gần nhất theo X trên toàn bề rộng đồ thị (tooltip luôn đi theo chuột như mẫu)
+        if (e.Y < plot.Top - S(8) || e.Y > plot.Bottom + S(8)) { Release(); return; }
+        // điểm gần nhất theo X cho tooltip; mép cắt đi theo đúng con trỏ
         var pts = Points(plot, Nice(values.Max()).Max);
         int best = -1; float bestD = float.MaxValue;
         for (int i = 0; i < pts.Length; i++) { float d = Math.Abs(pts[i].X - e.X); if (d < bestD) { bestD = d; best = i; } }
+        if (float.IsNaN(clipX)) clipX = FullRight;   // vào lần đầu: lò xo rút từ mép phải về con trỏ
         SetHover(best);
+        FollowTo(Math.Clamp(e.X, plot.Left, plot.Right));
+    }
+
+    /// <summary>Rời vùng đồ thị: mép cắt mở lại tới mép phải, lớp mờ tan (dimT → 0 do ChartBase).</summary>
+    void Release()
+    {
+        SetHover(-1);
+        if (!float.IsNaN(clipX)) FollowTo(FullRight);
+    }
+
+    protected override void OnMouseLeave(EventArgs e) { Release(); base.OnMouseLeave(e); }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) spring?.Invoke();
+        base.Dispose(disposing);
     }
 }
 

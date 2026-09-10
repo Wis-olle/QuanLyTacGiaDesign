@@ -50,6 +50,9 @@ public static class ScreenshotHarness
         form.GoTo("dashboard");   // bấm lại trang đang mở: phải chạy lại hoạt cảnh, không được kẹt ở trạng thái trắng
         await Shot("29-dashboard-again", 1500);
 
+        form.GoTo("dashboard");
+        await Shot("31-chart-reveal", 430);   // giữa lúc biểu đồ theo tháng quét từ trái sang phải (đầu bút + chấm bật lên)
+
         // rê chuột vào thẻ "Nam" để hoạ tiết chuyển động (di chuyển con trỏ thật → MouseEnter)
         Cursor.Position = form.PointToScreen(new Point((int)(form.ClientSize.Width * 0.46), (int)(form.ClientSize.Height * 0.26)));
         await Shot("22-card-hover", 900);

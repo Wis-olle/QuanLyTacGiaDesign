@@ -296,7 +296,16 @@ namespace QuanLyTacGia.Pages
             if (dr != DialogResult.OK || ctrl.Result == null) return;
 
             var saved = ctrl.Result;
-            if (t == null) SampleData.TacGias.Add(saved);
+            try
+            {
+                if (t == null) { Db.Insert(saved); SampleData.TacGias.Add(saved); }   // ghi xuống CSDL trước, vào danh sách sau
+                else Db.Update(saved);
+            }
+            catch (Exception ex)
+            {
+                Toast.Error(form, $"Chưa lưu được xuống CSDL: {ex.Message}");
+                return;
+            }
             ApplyFilter(false);
             GoToRecord(saved);
             detail?.Show(saved);
@@ -315,6 +324,8 @@ namespace QuanLyTacGia.Pages
             };
             if (Modal.open(cfg) != DialogResult.OK) return;
 
+            try { Db.Delete(t.MaTacGia); }
+            catch (Exception ex) { Toast.Error(form, $"Chưa xoá được trong CSDL: {ex.Message}"); return; }
             SampleData.TacGias.Remove(t);
             drawer?.Close();
             ApplyFilter(false);

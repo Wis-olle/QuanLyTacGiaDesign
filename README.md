@@ -2,7 +2,7 @@
 
 Cùng giao diện và chức năng với `../QuanLyTacGia` (bản dựng bằng code), nhưng **mọi màn hình đều có file `*.Designer.cs`** nên mở được trong Windows Forms Designer: kéo control từ Toolbox, chỉnh trong Properties, nhấp đôi tạo sự kiện — đúng cách xây giao diện bằng Toolbox. Dự án gốc giữ nguyên, không sửa.
 
-Chỉ phần UI/UX, dữ liệu mẫu in-memory (48 tác giả). Phong cách, tài liệu thiết kế và review dùng chung: `../PHONG_CACH_THIET_KE.md`, `../KIEN_TRUC_MAN_HINH.md`, `../MAU_THIET_KE.md`.
+Dữ liệu nằm trên **SQL Server** (CSDL `QuanLyTacGia`, 48 tác giả mẫu): chạy `sql/QuanLyTacGia.sql` một lần rồi F5 — chi tiết và cách đổi chuỗi kết nối xem [KET_NOI_CSDL.md](KET_NOI_CSDL.md). Phong cách, tài liệu thiết kế và review dùng chung: `../PHONG_CACH_THIET_KE.md`, `../KIEN_TRUC_MAN_HINH.md`, `../MAU_THIET_KE.md`.
 
 ## Tải về và chạy
 Mã nguồn: https://github.com/Wis-olle/QuanLyTacGiaDesign
@@ -50,7 +50,9 @@ Không dùng hàm tự viết (`S()`, `AppTheme.*`) trong `*.Designer.cs`: Desig
 | `Ui/VietLocalization.cs` | Nhãn tiếng Việt cho AntdUI (lịch bố cục quốc tế, "Hôm nay", "Huỷ"…) — mặc định AntdUI là tiếng Trung |
 | `Ui/Charts.cs`, `Ui/GradientCard.cs`, `Ui/Motion.cs`, `Ui/PulseDot.cs`, `Ui/Brand.cs` | Biểu đồ tự vẽ, hoạ tiết thẻ số liệu, motion, chấm nhịp đập, logo |
 | `Ui/ScreenshotHarness.cs` | Tự chụp 22 màn hình để review (`QLTG_SHOT=<thư mục>`) |
-| `Assets/`, `tools/`, `Models/`, `Data/` | Như bản gốc |
+| `Data/Db.cs` | ADO.NET: SELECT / INSERT / UPDATE / DELETE trên SQL Server, chuỗi kết nối |
+| `sql/QuanLyTacGia.sql` | Tạo CSDL + bảng `TacGia` + 48 tác giả mẫu |
+| `Assets/`, `tools/`, `Models/` | Như bản gốc |
 
 ## DPI / nhiều màn hình
 `PerMonitorV2` + **AutoScaleMode.Dpi** chuẩn của WinForms trên form và các trang (`AutoScaleDimensions = 96×96`): bố cục designer tự nhân theo DPI màn, kể cả khi kéo sang màn khác (WinForms xử lý WM_DPICHANGED). MainForm tắt `AutoHandDpi` của AntdUI để không nhân hai lần. Nội dung Drawer / Modal (`TacGiaDetailPanel`, `TacGiaEditControl`) để `AutoScaleMode.None` vì AntdUI đã tự nhân Dpi cho content.

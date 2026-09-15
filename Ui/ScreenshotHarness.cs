@@ -1,4 +1,6 @@
 using System.Drawing.Imaging;
+using QuanLyTacGia.Data;
+using QuanLyTacGia.Models;
 using QuanLyTacGia.Pages;
 
 namespace QuanLyTacGia.Ui;
@@ -153,6 +155,38 @@ public static class ScreenshotHarness
 
         form.GoTo("dashboard");
         await Shot("28-dashboard-slide", 90);   // giữa cú trượt: thẻ phủ trắng, số 0, biểu đồ trống (trạng thái đầu chụp vào ảnh)
+
+        Log(dir, DbRoundTrip());
+    }
+
+    /// <summary>
+    /// Kiểm tra CSDL: thêm một tác giả tạm → đọc lại → sửa → xoá. Ghi kết quả vào log.txt.
+    /// Đây là "runnable check" của lớp Data/Db.cs; hỏng đường ghi xuống SQL Server là thấy ngay ở dòng db-check.
+    /// </summary>
+    static string DbRoundTrip()
+    {
+        var ma = "TG9999";
+        try
+        {
+            Db.Delete(ma);   // dọn rác của lần chạy hỏng trước
+            var t = new TacGia { MaTacGia = ma, HoTen = "Kiểm tra CSDL", NgaySinh = new DateTime(1990, 2, 3), GioiTinh = "Nữ", DienThoai = "0900000000", Email = "kiemtra@gmail.com", DiaChi = "Hà Nội", NgayTao = DateTime.Today };
+            Db.Insert(t);
+            var back = Db.LoadAll().FirstOrDefault(x => x.MaTacGia == ma);
+            if (back == null || back.HoTen != t.HoTen || back.NgaySinh != t.NgaySinh || back.GioiTinh != t.GioiTinh) return "db-check FAIL: đọc lại không khớp bản vừa thêm";
+
+            t.HoTen = "Kiểm tra CSDL 2";
+            Db.Update(t);
+            if (Db.LoadAll().FirstOrDefault(x => x.MaTacGia == ma)?.HoTen != t.HoTen) return "db-check FAIL: sửa không lưu";
+
+            Db.Delete(ma);
+            if (Db.LoadAll().Any(x => x.MaTacGia == ma)) return "db-check FAIL: xoá không tác dụng";
+            return "db-check OK (thêm / đọc / sửa / xoá trên SQL Server)";
+        }
+        catch (Exception ex)
+        {
+            try { Db.Delete(ma); } catch { }
+            return "db-check FAIL: " + ex.Message;
+        }
     }
 
     static void Log(string dir, string msg) => File.AppendAllText(Path.Combine(dir, "log.txt"), $"{DateTime.Now:HH:mm:ss.fff} {msg}{Environment.NewLine}");
